@@ -1,14 +1,67 @@
 ---
 
-- name: Install debian specific package_facts dependency
+- name: Ensure container user exists
   become: true
-  when: ansible_distribution == "Debian"
-  ansible.builtin.package:
-    name: python-apt-common
+  ansible.builtin.user:
+    name: "{{ rootless_user }}"
+    comment: "Container service account"
+    home: "{{ rootless_user_home }}"
+    create_home: true
+    system: "{{ system_user }}"
+    shell: /bin/bash
     state: present
 
-# INFO This task may be obsolete for your use-case
-- name: Gather package facts
-  ansible.builtin.package_facts:
+- name: Enable lingering for rootless user
+  become: true
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ rootless_user }}"
+  args:
+    creates: "/var/lib/systemd/linger/{{ rootless_user }}"
+
+- name: Add containers user to systemd-journal group
+  become: true
+  ansible.builtin.user:
+    name: "{{ rootless_user }}"
+    groups: "systemd-journal"
+    append: true
+
+- name: Set up sbids for system user
+  when: system_user
+  block:
+    - name: Ensure subuid packages are installed
+      become: true
+      ansible.builtin.package:
+        name: "{{ subid_package[ansible_distribution] }}"
+        state: present
+        update_cache: true
+
+    - name: Get subuid user entry
+      ansible.builtin.command:
+        cmd: "getsubids {{ rootless_user }}"
+      changed_when: false
+      failed_when: subuid_result.rc not in [0, 1]
+      register: subuid_result
+
+    - name: Get subgid user entry
+      ansible.builtin.command:
+        cmd: "getsubids -g {{ rootless_user }}"
+      changed_when: false
+      failed_when: subgid_result.rc not in [0, 1]
+      register: subgid_result
+
+    - name: Initialize subid list
+      ansible.builtin.set_fact:
+        subids: >-
+          {{
+            ([ 'subuid' ] if subuid_result.rc == 1 else [])
+            + ([ 'subgid' ] if subgid_result.rc == 1 else [])
+          }}
+
+    - name: Include subid config
+      loop: "{{ subids }}"
+      loop_control:
+        loop_var: subid_type
+      ansible.builtin.include_tasks:
+        file: subid_config.yml
 
 ...

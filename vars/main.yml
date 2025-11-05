@@ -1,5 +1,10 @@
 ---
 
-ansible_role_template: "Default role name still in use."
+subid_package:
+  AlmaLinux: "shadow-utils-subid"
+  Rocky: "shadow-utils-subid"
+  CentOS: "shadow-utils-subid"
+  Ubuntu: "libvshadow-utils"
+  Debian: "uidmap"
 
 ...

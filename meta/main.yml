@@ -1,11 +1,10 @@
 ---
 
 galaxy_info:
-  role_name: podman-rootless-user
-  namespace: philnewm
-  author: author_name
-  description: ansible-role-template description
-  license: some_license
+  role_name: podman_rootless_user
+  author: philnewm
+  description: Create and configure a user for rootless podman containers
+  license: MIT
   min_ansible_version: "2.1"
   platforms:
     - name: EL
@@ -14,8 +13,5 @@ galaxy_info:
     - name: Debian
       versions:
         - "bookworm"
-    - name: "Ubuntu"
-      versions:
-        - "jammy"
   galaxy_tags: []
 dependencies: []

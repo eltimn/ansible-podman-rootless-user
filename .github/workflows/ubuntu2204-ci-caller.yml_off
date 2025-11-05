@@ -1,5 +1,5 @@
 ---
-
+# INFO disabled due to ubuntu2204 not supporting `getsubids` comamdn from uidmap package
 name: Ubuntu2204-CI
 
 on:

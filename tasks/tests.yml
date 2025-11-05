@@ -1,3 +1,59 @@
 ---
 
+- name: "Query for user {{ rootless_user }}"
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ rootless_user }}"
+  register: user_result
+
+- name: "Test for existing user {{ rootless_user }}"
+  ansible.builtin.assert:
+    that:
+      - rootless_user in user_result.ansible_facts.getent_passwd.keys()
+      - rootless_user_home == user_result.ansible_facts.getent_passwd[rootless_user][4]
+      - user_result.ansible_facts.getent_passwd[rootless_user][1] | int < 1000
+    fail_msg: "Failed user check for {{ rootless_user }}"
+    quiet: true
+
+- name: Get linger users
+  ansible.builtin.command:
+    cmd: "ls /var/lib/systemd/linger/"
+  changed_when: false
+  register: linger_users
+
+- name: "Test enabled lingering for user {{ rootless_user }}"
+  ansible.builtin.assert:
+    that:
+      - rootless_user in linger_users.stdout_lines
+    fail_msg: "Lingering was not enabled for user {{ rootless_user }}"
+    quiet: true
+
+- name: "Get subuids for user {{ rootless_user }}"
+  ansible.builtin.command:
+    cmd: "getsubids {{ rootless_user }}"
+  changed_when: false
+  failed_when: subuid_result.rc not in [0, 1]
+  register: subuid_result
+
+- name: "Test subuids for user {{ rootless_user }}"
+  ansible.builtin.assert:
+    that:
+      - rootless_user in subuid_result.stdout
+    fail_msg: "Failed to find subuids for user {{ rootless_user }}"
+    quiet: true
+
+- name: "Get subgids for user {{ rootless_user }}"
+  ansible.builtin.command:
+    cmd: "getsubids -g {{ rootless_user }}"
+  changed_when: false
+  failed_when: subgid_result.rc not in [0, 1]
+  register: subgid_result
+
+- name: "Test subgids for user {{ rootless_user }}"
+  ansible.builtin.assert:
+    that:
+      - rootless_user in subgid_result.stdout
+    fail_msg: "Failed to find subgids for user {{ rootless_user }}"
+    quiet: true
+
 ...

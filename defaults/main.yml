@@ -1,5 +1,9 @@
 ---
 
 state: present
+rootless_user: "podman"
+rootless_user_home: "/var/lib/{{ rootless_user }}"
+system_user: true
+subid_steps: 65536
 
 ...
